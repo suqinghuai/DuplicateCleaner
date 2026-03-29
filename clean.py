@@ -1,9 +1,15 @@
 import os
 import re
+import sys
 
 def clean_duplicate_files():
     # 获取当前脚本所在目录
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的可执行文件
+        current_dir = os.path.dirname(sys.executable)
+    else:
+        # 如果是脚本运行
+        current_dir = os.path.dirname(os.path.abspath(__file__))
     
     # 正则表达式匹配带有 (1), (2), (3) 等后缀的文件名
     # 例如：匹配 "测试文件 (1).txt" 或 "图片(2).png"
