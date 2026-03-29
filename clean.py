@@ -10,29 +10,37 @@ def clean_duplicate_files():
     pattern = re.compile(r'^(.*?)(\s*\(\d+\))(\.[a-zA-Z0-9_]+)?$')
     
     deleted_files = []
+    skipped_files = []
     
-    print(f"开始扫描目录: {current_dir}\n")
+    print(f"开始扫描目录及其子目录: {current_dir}\n")
     
-    for filename in os.listdir(current_dir):
-        filepath = os.path.join(current_dir, filename)
-        
-        # 只处理文件，跳过文件夹
-        if not os.path.isfile(filepath):
-            continue
+    for root, _, files in os.walk(current_dir):
+        for filename in files:
+            filepath = os.path.join(root, filename)
             
-        match = pattern.match(filename)
-        if match:
-            base_name = match.group(1)
-            extension = match.group(3) if match.group(3) else ""
-            original_filename = f"{base_name}{extension}"
-            
-            try:
-                os.remove(filepath)
-                deleted_files.append(filename)
-                print(f"[-] 成功清除: {filename} (对应原始文件: {original_filename})")
-            except Exception as e:
-                print(f"[x] 清除失败: {filename}, 错误: {e}")
-                    
+            match = pattern.match(filename)
+            if match:
+                base_name = match.group(1)
+                extension = match.group(3) if match.group(3) else ""
+                original_filename = f"{base_name}{extension}"
+                original_filepath = os.path.join(root, original_filename)
+                
+                if os.path.exists(original_filepath):
+                    # 检查文件大小是否一致
+                    if os.path.getsize(filepath) == os.path.getsize(original_filepath):
+                        try:
+                            os.remove(filepath)
+                            deleted_files.append(filepath)
+                            print(f"[-] 成功清除: {filepath} (对应原始文件: {original_filepath})")
+                        except Exception as e:
+                            print(f"[x] 清除失败: {filepath}, 错误: {e}")
+                    else:
+                        skipped_files.append(filepath)
+                        print(f"[!] 跳过文件: {filepath} (文件大小不一致)")
+                else:
+                    skipped_files.append(filepath)
+                    print(f"[!] 跳过文件: {filepath} (原始文件不存在)")
+    
     print("\n" + "="*40)
     print("清理完成！")
     print(f"共清除了 {len(deleted_files)} 个重复文件。")
@@ -40,6 +48,12 @@ def clean_duplicate_files():
         print("清除列表:")
         for df in deleted_files:
             print(f"  - {df}")
+    
+    print(f"\n共跳过了 {len(skipped_files)} 个文件。")
+    if skipped_files:
+        print("跳过列表:")
+        for sf in skipped_files:
+            print(f"  - {sf}")
 
 if __name__ == "__main__":
     clean_duplicate_files()
