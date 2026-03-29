@@ -18,6 +18,9 @@ def clean_duplicate_files():
     deleted_files = []
     skipped_files = []
     
+    # 定义文件大小判断的冗余范围（单位：字节）
+    size_tolerance = 500 * 1024  # 允许 500KB 的大小差异
+    
     print(f"开始扫描目录及其子目录: {current_dir}\n")
     
     for root, _, files in os.walk(current_dir):
@@ -33,16 +36,21 @@ def clean_duplicate_files():
                 
                 if os.path.exists(original_filepath):
                     # 检查文件大小是否一致
-                    if os.path.getsize(filepath) == os.path.getsize(original_filepath):
+                    if abs(os.path.getsize(filepath) - os.path.getsize(original_filepath)) <= size_tolerance:
                         try:
                             os.remove(filepath)
                             deleted_files.append(filepath)
-                            print(f"[-] 成功清除: {filepath} (对应原始文件: {original_filepath})")
+                            # 输出优化，仅显示文件名和大小
+                            file_size = os.path.getsize(filepath)
+                            original_size = os.path.getsize(original_filepath)
+                            print(f"[-] 成功清除: {filename} (大小: {file_size} 字节, 对应原始文件大小: {original_size} 字节)")
                         except Exception as e:
-                            print(f"[x] 清除失败: {filepath}, 错误: {e}")
+                            print(f"[x] 清除失败: {filename}, 错误: {e}")
                     else:
-                        skipped_files.append(filepath)
-                        print(f"[!] 跳过文件: {filepath} (文件大小不一致)")
+                        skipped_files.append(filename)
+                        file_size = os.path.getsize(filepath)
+                        original_size = os.path.getsize(original_filepath)
+                        print(f"[!] 跳过文件: {filename} (文件大小不一致: {file_size} 字节 vs {original_size} 字节)")
                 else:
                     skipped_files.append(filepath)
                     print(f"[!] 跳过文件: {filepath} (原始文件不存在)")
